@@ -200,7 +200,10 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json(parsed);
+    return NextResponse.json({
+      ...parsed,
+      meta: { white: metadata.white, black: metadata.black, result: metadata.result },
+    });
   } catch (error) {
     console.error("Analyze route error:", error);
     return NextResponse.json(

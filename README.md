@@ -45,3 +45,15 @@ npm test
 4. For each critical moment, a board snapshot is built with exact piece counts, locations, capture/recapture/trade detection
 5. The structured move log, board snapshots, and engine data are sent to OpenAI
 6. The model returns a structured analysis: summary, critical moments explained, mistakes, and training tasks
+7. The analysis is automatically saved to localStorage
+
+## Your Patterns (v2)
+
+After analyzing 3 or more games, the **Your Patterns** section appears below the analysis results.
+
+- **Auto-save**: Every successful analysis is saved automatically (up to 50 games)
+- **Find Patterns**: Sends your analysis history to GPT-4.1 to identify recurring weaknesses, strengths, and a prioritized study plan
+- **Game history**: View and manage all saved analyses
+- **Clear history**: Reset your saved games at any time
+
+This turns the analyzer from a single-use tool into a personal improvement tracker that gets more valuable with every game.

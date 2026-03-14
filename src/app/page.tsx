@@ -1,12 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import {
+  loadHistory,
+  saveAnalysis,
+  clearHistory,
+  type AnalysisEntry,
+} from "@/lib/history";
 
 type AnalysisResult = {
   summary: string;
   mistakes: string[];
   trainingTasks: string[];
   criticalMoments?: string[];
+  meta?: { white?: string; black?: string; result?: string };
+};
+
+type PatternsResult = {
+  recurringWeaknesses: string[];
+  strengths: string[];
+  studyPlan: string[];
 };
 
 function LoadingDots() {
@@ -46,6 +59,16 @@ export default function Home() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [history, setHistory] = useState<AnalysisEntry[]>([]);
+  const [patterns, setPatterns] = useState<PatternsResult | null>(null);
+  const [patternsLoading, setPatternsLoading] = useState(false);
+  const [patternsError, setPatternsError] = useState("");
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
+
   async function handleAnalyze() {
     if (!pgn.trim()) {
       setError("Please paste a PGN first.");
@@ -70,12 +93,58 @@ export default function Home() {
       }
 
       setAnalysis(data);
+      saveAnalysis(pgn.trim(), userColor, data, data.meta ?? {});
+      setHistory(loadHistory());
     } catch {
       setError("Request failed.");
     } finally {
       setLoading(false);
     }
   }
+
+  async function handlePatterns() {
+    if (history.length < 3) return;
+    setPatternsError("");
+    setPatterns(null);
+    setPatternsLoading(true);
+    try {
+      const res = await fetch("/api/patterns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          analyses: history.map((h) => ({
+            result: h.result,
+            userColor: h.userColor,
+            summary: h.summary,
+            mistakes: h.mistakes,
+            trainingTasks: h.trainingTasks,
+            criticalMoments: h.criticalMoments,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPatternsError(data.error || "Pattern analysis failed.");
+        return;
+      }
+      setPatterns(data);
+    } catch {
+      setPatternsError("Request failed.");
+    } finally {
+      setPatternsLoading(false);
+    }
+  }
+
+  function handleClearHistory() {
+    clearHistory();
+    setHistory([]);
+    setPatterns(null);
+  }
+
+  const dateRange =
+    history.length >= 2
+      ? `${new Date(history[history.length - 1].date).toLocaleDateString()} - ${new Date(history[0].date).toLocaleDateString()}`
+      : null;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -195,6 +264,146 @@ export default function Home() {
               </ul>
             </SectionCard>
           </div>
+        )}
+
+        {/* Your Patterns */}
+        {history.length > 0 && (
+          <section className="mt-16 border-t border-gray-200 pt-10 dark:border-zinc-700">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xl font-bold tracking-tight">
+                Your Patterns
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowHistory((s) => !s)}
+                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-gray-100 dark:border-zinc-600 dark:hover:bg-zinc-800"
+                >
+                  {showHistory ? "Hide History" : "Show History"}
+                </button>
+                <button
+                  onClick={handlePatterns}
+                  disabled={patternsLoading || history.length < 3}
+                  className="rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                >
+                  {patternsLoading ? "Analyzing..." : "Find Patterns"}
+                </button>
+              </div>
+            </div>
+            <p className="mb-6 text-sm text-gray-500 dark:text-zinc-400">
+              Based on {history.length} game{history.length !== 1 ? "s" : ""} analyzed
+              {dateRange ? ` (${dateRange})` : ""}
+              {history.length < 3 && " — analyze at least 3 games to unlock pattern detection"}
+            </p>
+
+            {showHistory && (
+              <div className="mb-6 space-y-2">
+                {history.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium">
+                        {entry.white} vs {entry.black}
+                      </span>
+                      <span className="text-gray-400 dark:text-zinc-500">
+                        {entry.result}
+                      </span>
+                      {entry.userColor && (
+                        <span className="rounded bg-gray-200 px-1.5 py-0.5 text-xs dark:bg-zinc-700">
+                          {entry.userColor === "w" ? "White" : "Black"}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-400 dark:text-zinc-500">
+                      {new Date(entry.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+                <button
+                  onClick={handleClearHistory}
+                  className="mt-2 text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                >
+                  Clear all history
+                </button>
+              </div>
+            )}
+
+            {patternsLoading && (
+              <div className="animate-pulse rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-zinc-700 dark:bg-zinc-900">
+                <p className="text-sm text-gray-500 dark:text-zinc-400">
+                  Finding recurring patterns across your games
+                  <LoadingDots />
+                </p>
+              </div>
+            )}
+
+            {patternsError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  {patternsError}
+                </p>
+              </div>
+            )}
+
+            {patterns && (
+              <div className="space-y-4">
+                {patterns.recurringWeaknesses.length > 0 && (
+                  <SectionCard label="Recurring Weaknesses">
+                    <ul className="space-y-2">
+                      {patterns.recurringWeaknesses.map((w, i) => (
+                        <li
+                          key={i}
+                          className="flex gap-2 text-sm leading-relaxed"
+                        >
+                          <span className="mt-0.5 text-red-400 dark:text-red-500">
+                            &bull;
+                          </span>
+                          <span>{w}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </SectionCard>
+                )}
+
+                {patterns.strengths.length > 0 && (
+                  <SectionCard label="Strengths">
+                    <ul className="space-y-2">
+                      {patterns.strengths.map((s, i) => (
+                        <li
+                          key={i}
+                          className="flex gap-2 text-sm leading-relaxed"
+                        >
+                          <span className="mt-0.5 text-green-500 dark:text-green-400">
+                            &bull;
+                          </span>
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </SectionCard>
+                )}
+
+                {patterns.studyPlan.length > 0 && (
+                  <SectionCard label="Study Plan">
+                    <ol className="space-y-2">
+                      {patterns.studyPlan.map((t, i) => (
+                        <li
+                          key={i}
+                          className="flex gap-2 text-sm leading-relaxed"
+                        >
+                          <span className="mt-0.5 min-w-[1.25rem] text-gray-400 dark:text-zinc-500">
+                            {i + 1}.
+                          </span>
+                          <span>{t}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </SectionCard>
+                )}
+              </div>
+            )}
+          </section>
         )}
       </main>
 
