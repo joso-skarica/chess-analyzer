@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type AnalysisResult = {
   summary: string;
@@ -8,10 +8,24 @@ type AnalysisResult = {
   trainingTasks: string[];
 };
 
+function LoadingDots() {
+  const [dots, setDots] = useState("");
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setDots((d) => (d.length >= 3 ? "" : d + "."));
+    }, 400);
+    return () => clearInterval(id);
+  }, []);
+
+  return <span>{dots}</span>;
+}
+
 export default function Home() {
   const [pgn, setPgn] = useState("");
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleAnalyze() {
     if (!pgn.trim()) {
@@ -21,6 +35,8 @@ export default function Home() {
     }
 
     setError("");
+    setAnalysis(null);
+    setLoading(true);
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -31,14 +47,14 @@ export default function Home() {
 
       if (!res.ok) {
         setError(data.error || "Analysis failed.");
-        setAnalysis(null);
         return;
       }
 
       setAnalysis(data);
     } catch {
       setError("Request failed.");
-      setAnalysis(null);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -59,10 +75,17 @@ export default function Home() {
 
       <button
         onClick={handleAnalyze}
-        className="px-4 py-2 rounded-lg border"
+        disabled={loading}
+        className="px-4 py-2 rounded-lg border disabled:opacity-50"
       >
-        Analyze Game
+        {loading ? "Analyzing..." : "Analyze Game"}
       </button>
+
+      {loading && (
+        <p className="mt-3 text-sm text-gray-500">
+          Analyzing game, please wait a few moments<LoadingDots />
+        </p>
+      )}
 
       {error && (
         <div className="mt-6 p-4 border rounded-lg">
