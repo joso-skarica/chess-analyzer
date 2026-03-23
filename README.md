@@ -4,6 +4,8 @@ Paste a PGN and get a coach-level review grounded in engine analysis — not jus
 
 The app replays every position through Stockfish to detect the biggest evaluation swings, then builds machine-verified board snapshots at each critical moment and sends them to GPT-4.1 for a plain-English breakdown of the game's turning points, recurring mistakes, and concrete training tasks.
 
+**Live app (Railway):** [https://chess-analyzer-production-7ec2.up.railway.app/](https://chess-analyzer-production-7ec2.up.railway.app/)
+
 ## Stack
 
 - **Next.js** (App Router, TypeScript, Tailwind CSS)
