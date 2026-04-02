@@ -7,6 +7,12 @@ import {
   clearHistory,
   type AnalysisEntry,
 } from "@/lib/history";
+import {
+  SCREENSHOT_DEMO,
+  SCREENSHOT_DEMO_ANALYSIS,
+  SCREENSHOT_DEMO_HISTORY,
+  SCREENSHOT_DEMO_PATTERNS,
+} from "@/lib/screenshot-demo";
 
 type AnalysisResult = {
   summary: string;
@@ -69,7 +75,12 @@ export default function Home() {
     setHistory(loadHistory());
   }, []);
 
+  const displayAnalysis = SCREENSHOT_DEMO ? SCREENSHOT_DEMO_ANALYSIS : analysis;
+  const displayHistory = SCREENSHOT_DEMO ? SCREENSHOT_DEMO_HISTORY : history;
+  const displayPatterns = SCREENSHOT_DEMO ? SCREENSHOT_DEMO_PATTERNS : patterns;
+
   async function handleAnalyze() {
+    if (SCREENSHOT_DEMO) return;
     if (!pgn.trim()) {
       setError("Please paste a PGN first.");
       setAnalysis(null);
@@ -103,6 +114,7 @@ export default function Home() {
   }
 
   async function handlePatterns() {
+    if (SCREENSHOT_DEMO) return;
     if (history.length < 3) return;
     setPatternsError("");
     setPatterns(null);
@@ -136,14 +148,15 @@ export default function Home() {
   }
 
   function handleClearHistory() {
+    if (SCREENSHOT_DEMO) return;
     clearHistory();
     setHistory([]);
     setPatterns(null);
   }
 
   const dateRange =
-    history.length >= 2
-      ? `${new Date(history[history.length - 1].date).toLocaleDateString()} - ${new Date(history[0].date).toLocaleDateString()}`
+    displayHistory.length >= 2
+      ? `${new Date(displayHistory[displayHistory.length - 1].date).toLocaleDateString()} - ${new Date(displayHistory[0].date).toLocaleDateString()}`
       : null;
 
   return (
@@ -151,12 +164,10 @@ export default function Home() {
       <main className="flex-1 w-full max-w-3xl mx-auto px-6 py-12 sm:px-8">
         <header className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">
-            Chess PGN Analyzer
+            {SCREENSHOT_DEMO ? "♞ Kibitz — Chess PGN Analyzer" : "Chess PGN Analyzer"}
           </h1>
           <p className="mt-2 text-sm text-gray-500 dark:text-zinc-400">
-            Paste a PGN. Get a coach-level review grounded in engine analysis
-            &mdash; not just the best moves, but what went wrong and what to
-            practice.
+            {SCREENSHOT_DEMO ? "Paste a PGN and get a coach-level review grounded in engine analysis — critical moments, recurring patterns, and practical training advice." : "Paste a PGN. Get a coach-level review grounded in engine analysis — not just the best moves, but what went wrong and what to practice."}
           </p>
         </header>
 
@@ -210,23 +221,23 @@ export default function Home() {
           </div>
         )}
 
-        {error && (
+        {!SCREENSHOT_DEMO && error && (
           <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
             <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
           </div>
         )}
 
-        {analysis && (
+        {displayAnalysis && (
           <div className="mt-8 space-y-4">
             <SectionCard label="Summary">
-              <p className="text-sm leading-relaxed">{analysis.summary}</p>
+              <p className="text-sm leading-relaxed">{displayAnalysis.summary}</p>
             </SectionCard>
 
-            {analysis.criticalMoments &&
-              analysis.criticalMoments.length > 0 && (
+            {displayAnalysis.criticalMoments &&
+              displayAnalysis.criticalMoments.length > 0 && (
                 <SectionCard label="Critical Moments">
                   <ul className="space-y-3">
-                    {analysis.criticalMoments.map((m, i) => (
+                    {displayAnalysis.criticalMoments.map((m, i) => (
                       <li
                         key={i}
                         className="border-l-2 border-gray-300 pl-3 text-sm leading-relaxed dark:border-zinc-600"
@@ -240,7 +251,7 @@ export default function Home() {
 
             <SectionCard label="Mistakes">
               <ul className="space-y-2">
-                {analysis.mistakes.map((m, i) => (
+                {displayAnalysis.mistakes.map((m, i) => (
                   <li key={i} className="flex gap-2 text-sm leading-relaxed">
                     <span className="mt-0.5 text-gray-400 dark:text-zinc-500">
                       &bull;
@@ -253,7 +264,7 @@ export default function Home() {
 
             <SectionCard label="Training Tasks">
               <ul className="space-y-2">
-                {analysis.trainingTasks.map((t, i) => (
+                {displayAnalysis.trainingTasks.map((t, i) => (
                   <li key={i} className="flex gap-2 text-sm leading-relaxed">
                     <span className="mt-0.5 text-gray-400 dark:text-zinc-500">
                       &bull;
@@ -267,7 +278,7 @@ export default function Home() {
         )}
 
         {/* Your Patterns */}
-        {history.length > 0 && (
+        {displayHistory.length > 0 && (
           <section className="mt-16 border-t border-gray-200 pt-10 dark:border-zinc-700">
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-xl font-bold tracking-tight">
@@ -282,7 +293,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={handlePatterns}
-                  disabled={patternsLoading || history.length < 3}
+                  disabled={patternsLoading || displayHistory.length < 3}
                   className="rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
                 >
                   {patternsLoading ? "Analyzing..." : "Find Patterns"}
@@ -290,14 +301,14 @@ export default function Home() {
               </div>
             </div>
             <p className="mb-6 text-sm text-gray-500 dark:text-zinc-400">
-              Based on {history.length} game{history.length !== 1 ? "s" : ""} analyzed
+              Based on {displayHistory.length} game{displayHistory.length !== 1 ? "s" : ""} analyzed
               {dateRange ? ` (${dateRange})` : ""}
-              {history.length < 3 && " — analyze at least 3 games to unlock pattern detection"}
+              {displayHistory.length < 3 && " — analyze at least 3 games to unlock pattern detection"}
             </p>
 
             {showHistory && (
               <div className="mb-6 space-y-2">
-                {history.map((entry) => (
+                {displayHistory.map((entry) => (
                   <div
                     key={entry.id}
                     className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-zinc-700 dark:bg-zinc-900"
@@ -338,7 +349,7 @@ export default function Home() {
               </div>
             )}
 
-            {patternsError && (
+            {!SCREENSHOT_DEMO && patternsError && (
               <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
                 <p className="text-sm text-red-700 dark:text-red-300">
                   {patternsError}
@@ -346,12 +357,12 @@ export default function Home() {
               </div>
             )}
 
-            {patterns && (
+            {displayPatterns && (
               <div className="space-y-4">
-                {patterns.recurringWeaknesses.length > 0 && (
+                {displayPatterns.recurringWeaknesses.length > 0 && (
                   <SectionCard label="Recurring Weaknesses">
                     <ul className="space-y-2">
-                      {patterns.recurringWeaknesses.map((w, i) => (
+                      {displayPatterns.recurringWeaknesses.map((w, i) => (
                         <li
                           key={i}
                           className="flex gap-2 text-sm leading-relaxed"
@@ -366,10 +377,10 @@ export default function Home() {
                   </SectionCard>
                 )}
 
-                {patterns.strengths.length > 0 && (
+                {displayPatterns.strengths.length > 0 && (
                   <SectionCard label="Strengths">
                     <ul className="space-y-2">
-                      {patterns.strengths.map((s, i) => (
+                      {displayPatterns.strengths.map((s, i) => (
                         <li
                           key={i}
                           className="flex gap-2 text-sm leading-relaxed"
@@ -384,10 +395,10 @@ export default function Home() {
                   </SectionCard>
                 )}
 
-                {patterns.studyPlan.length > 0 && (
+                {displayPatterns.studyPlan.length > 0 && (
                   <SectionCard label="Study Plan">
                     <ol className="space-y-2">
-                      {patterns.studyPlan.map((t, i) => (
+                      {displayPatterns.studyPlan.map((t, i) => (
                         <li
                           key={i}
                           className="flex gap-2 text-sm leading-relaxed"

@@ -1,10 +1,13 @@
 import { Chess } from "chess.js";
 import { analyzeFen } from "@/lib/engine";
 
+const MIN_DELTA_CP = 50;
+const MIN_PLY_DISTANCE = 4;
+
 export type CriticalMoment = {
   ply: number;
   moveLabel: string;
-  moveText: string;
+  playedMove: string;
   side: "White" | "Black";
   fen: string;
   evalBefore: number | null;
@@ -19,7 +22,15 @@ export async function findCriticalMoments(
   depth = 10
 ): Promise<CriticalMoment[]> {
   const replay = new Chess();
-  const evals: { ply: number; moveLabel: string; moveText: string; side: "White" | "Black"; fen: string; evalCp: number | null; bestMove: string | null }[] = [];
+  const evals: {
+    ply: number;
+    moveLabel: string;
+    playedMove: string;
+    side: "White" | "Black";
+    fen: string;
+    evalCp: number | null;
+    bestMove: string | null;
+  }[] = [];
 
   for (let i = 0; i < history.length; i++) {
     replay.move(history[i]);
@@ -34,7 +45,7 @@ export async function findCriticalMoments(
     evals.push({
       ply,
       moveLabel,
-      moveText: history[i],
+      playedMove: history[i],
       side,
       fen: replay.fen(),
       evalCp: result.evalCp,
@@ -50,19 +61,34 @@ export async function findCriticalMoments(
 
     if (before === null || after === null) continue;
 
+    const delta = Math.abs(after - before);
+    if (delta < MIN_DELTA_CP) continue;
+
     swings.push({
       ply: evals[i].ply,
       moveLabel: evals[i].moveLabel,
-      moveText: evals[i].moveText,
+      playedMove: evals[i].playedMove,
       side: evals[i].side,
       fen: evals[i].fen,
       evalBefore: before,
       evalAfter: after,
-      delta: Math.abs(after - before),
+      delta,
       bestMove: evals[i].bestMove,
     });
   }
 
   swings.sort((a, b) => b.delta - a.delta);
-  return swings.slice(0, topN);
+
+  const selected: CriticalMoment[] = [];
+  for (const swing of swings) {
+    if (selected.length >= topN) break;
+    const tooClose = selected.some(
+      (s) => Math.abs(s.ply - swing.ply) < MIN_PLY_DISTANCE
+    );
+    if (tooClose) continue;
+    selected.push(swing);
+  }
+
+  selected.sort((a, b) => a.ply - b.ply);
+  return selected;
 }

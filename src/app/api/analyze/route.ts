@@ -37,7 +37,7 @@ summary
 A 2-4 sentence overview of how the game went — opening character, when balance shifted, how it ended.
 
 criticalMoments
-An array of exactly 3 strings, one per engine-flagged moment. Each should explain:
+An array of strings, one per engine-flagged moment (typically 3, but may be fewer if the game had few significant swings). Each should explain:
   1. What move was played and what it did (use the piece name from the move facts)
   2. Why it mattered (material, activity, king safety, initiative)
   3. How the game changed after it
@@ -140,7 +140,7 @@ export async function POST(request: Request) {
         : undefined;
 
       const lines = [
-        `--- Critical Moment: ${m.moveLabel} (${m.moveText}) ---`,
+        `--- Critical Moment: ${m.moveLabel} (${m.playedMove}) ---`,
         `Side: ${m.side}${isUserMove !== undefined ? (isUserMove ? " (YOUR move)" : " (OPPONENT's move)") : ""}`,
         `Eval before: ${evalBeforePawn} | Eval after: ${evalAfterPawn} | Delta: ${m.delta}cp`,
         `Engine best move: ${m.bestMove ?? "unknown"}`,

@@ -1,19 +1,35 @@
-# Chess PGN Analyzer
+# ♞ Kibitz — Chess PGN Analyzer
 
-Paste a PGN and get a coach-level review grounded in engine analysis — not just the best moves, but what went wrong and what to practice.
+Paste a PGN and get a coach-level review grounded in engine analysis — critical moments, recurring patterns, and practical training advice.
 
-The app replays every position through Stockfish to detect the biggest evaluation swings, then builds machine-verified board snapshots at each critical moment and sends them to GPT-4.1 for a plain-English breakdown of the game's turning points, recurring mistakes, and concrete training tasks.
+**[Try it live →](https://chess-analyzer-production-7ec2.up.railway.app/)**
 
-**Live app (Railway):** [https://chess-analyzer-production-7ec2.up.railway.app/](https://chess-analyzer-production-7ec2.up.railway.app/)
+![Kibitz — main view](docs/screenshots/main.png)
+
+## How It Works
+
+1. **Parse** — chess.js validates the PGN and replays every move.
+2. **Evaluate** — Stockfish scores each position (depth 10) and surfaces the top evaluation swings.
+3. **Explain** — GPT-4.1 receives the move log, machine-verified board snapshots, and engine data, then returns a structured review: summary, critical moments, mistakes, and training tasks.
+
+![Analysis results](docs/screenshots/analysis.png)
+
+## Cross-Game Patterns
+
+After three or more analyzed games, Kibitz identifies recurring weaknesses, strengths, and builds a prioritized study plan — turning single-game reviews into a personal improvement tracker.
+
+![Your Patterns — history and weaknesses](docs/screenshots/patterns.png)
+
+![Study plan](docs/screenshots/study-plan.png)
 
 ## Stack
 
 - **Next.js** (App Router, TypeScript, Tailwind CSS)
-- **chess.js** for PGN parsing, move replay, and board-state extraction
-- **Stockfish** (ASM.js, single-threaded) for position evaluation
-- **OpenAI Responses API** (gpt-4.1) for natural language analysis
+- **chess.js** — PGN parsing, move replay, board-state extraction
+- **Stockfish** (ASM.js, single-threaded) — position evaluation
+- **OpenAI Responses API** (GPT-4.1) — natural-language analysis
 
-## Setup
+## Getting Started
 
 ```bash
 npm install
@@ -25,37 +41,14 @@ Create `.env.local` in the project root:
 OPENAI_API_KEY=your-key-here
 ```
 
-## Development
+Run the development server:
 
 ```bash
-npm run dev
+npm run dev        # → http://127.0.0.1:3000
 ```
 
-Open http://127.0.0.1:3000 in your browser.
-
-## Testing
+Run tests:
 
 ```bash
 npm test
 ```
-
-## How it works
-
-1. User pastes a PGN and optionally selects which side they played
-2. chess.js validates and parses the game into a verbose move history
-3. Stockfish evaluates every position (depth 10) to find the top 3 eval swings
-4. For each critical moment, a board snapshot is built with exact piece counts, locations, capture/recapture/trade detection
-5. The structured move log, board snapshots, and engine data are sent to OpenAI
-6. The model returns a structured analysis: summary, critical moments explained, mistakes, and training tasks
-7. The analysis is automatically saved to localStorage
-
-## Your Patterns (v2)
-
-After analyzing 3 or more games, the **Your Patterns** section appears below the analysis results.
-
-- **Auto-save**: Every successful analysis is saved automatically (up to 50 games)
-- **Find Patterns**: Sends your analysis history to GPT-4.1 to identify recurring weaknesses, strengths, and a prioritized study plan
-- **Game history**: View and manage all saved analyses
-- **Clear history**: Reset your saved games at any time
-
-This turns the analyzer from a single-use tool into a personal improvement tracker that gets more valuable with every game.
