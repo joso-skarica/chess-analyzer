@@ -9,19 +9,31 @@ const DEMO_DATE = "2026-03-27T12:00:00.000Z";
  * Hardcoded payloads for screenshot mode.
  * Types mirror `src/app/page.tsx` (`AnalysisResult`, `PatternsResult`) and `AnalysisEntry`.
  */
+/** A full PGN for the board to render in demo mode (Evergreen Game). */
+export const SCREENSHOT_DEMO_PGN = `[Event "Casual"]
+[White "Adolf Anderssen"]
+[Black "Jean Dufresne"]
+[Result "1-0"]
+
+1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5 4.b4 Bxb4 5.c3 Ba5 6.d4 exd4 7.O-O d3
+8.Qb3 Qf6 9.e5 Qg6 10.Re1 Nge7 11.Ba3 b5 12.Qxb5 Rb8 13.Qa4 Bb6
+14.Nbd2 Bb7 15.Ne4 Qf5 16.Bxd3 Qh5 17.Nf6+ gxf6 18.exf6 Rg8
+19.Rad1 Qxf3 20.Rxe7+ Nxe7 21.Qxd7+ Kxd7 22.Bf5+ Ke8 23.Bd7+ Kf8
+24.Bxe7# 1-0`;
+
 export const SCREENSHOT_DEMO_ANALYSIS: {
   summary: string;
   mistakes: string[];
   trainingTasks: string[];
-  criticalMoments?: string[];
+  criticalMoments?: { text: string; ply: number | null }[];
   meta?: { white?: string; black?: string; result?: string };
 } = {
   summary:
     "White used rapid development, central control, and active piece play to seize the initiative early. Black fell behind in development and left the king stuck in the center, which gave White strong attacking chances. The turning point came when White opened lines and sacrificed material to keep the attack going. The game finished with a classic mating pattern driven by coordination and tempo.",
   criticalMoments: [
-    "10.Nxb5 — White begins a tactical operation to open lines on the queenside and punish Black's loose coordination.",
-    "13.Rxd7 — A decisive exchange sacrifice. White gives material to keep Black's king in danger and prevent the defenders from organizing.",
-    "14.Rd1 — White brings the last rook into the attack and increases pressure on the d-file, setting up the final mating sequence.",
+    { text: "10.Nxb5 — White begins a tactical operation to open lines on the queenside and punish Black's loose coordination.", ply: 19 },
+    { text: "13.Rxd7 — A decisive exchange sacrifice. White gives material to keep Black's king in danger and prevent the defenders from organizing.", ply: 25 },
+    { text: "14.Rd1 — White brings the last rook into the attack and increases pressure on the d-file, setting up the final mating sequence.", ply: 27 },
   ],
   mistakes: [
     "Black lost too much time with piece moves while failing to complete development.",

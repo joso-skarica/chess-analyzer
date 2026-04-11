@@ -12,13 +12,20 @@ import {
   SCREENSHOT_DEMO_ANALYSIS,
   SCREENSHOT_DEMO_HISTORY,
   SCREENSHOT_DEMO_PATTERNS,
+  SCREENSHOT_DEMO_PGN,
 } from "@/lib/screenshot-demo";
+import GameBoard from "@/components/GameBoard";
+
+type CriticalMoment = {
+  text: string;
+  ply: number | null;
+};
 
 type AnalysisResult = {
   summary: string;
   mistakes: string[];
   trainingTasks: string[];
-  criticalMoments?: string[];
+  criticalMoments?: CriticalMoment[];
   meta?: { white?: string; black?: string; result?: string };
 };
 
@@ -27,6 +34,17 @@ type PatternsResult = {
   strengths: string[];
   studyPlan: string[];
 };
+
+const dateFormatterUtc = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "UTC",
+  day: "numeric",
+  month: "numeric",
+  year: "numeric",
+});
+
+function formatDateUtc(isoDate: string): string {
+  return dateFormatterUtc.format(new Date(isoDate));
+}
 
 function LoadingDots() {
   const [dots, setDots] = useState("");
@@ -104,7 +122,15 @@ export default function Home() {
       }
 
       setAnalysis(data);
-      saveAnalysis(pgn.trim(), userColor, data, data.meta ?? {});
+      saveAnalysis(
+        pgn.trim(),
+        userColor,
+        {
+          ...data,
+          criticalMoments: data.criticalMoments?.map((cm: CriticalMoment) => cm.text) ?? [],
+        },
+        data.meta ?? {},
+      );
       setHistory(loadHistory());
     } catch {
       setError("Request failed.");
@@ -156,7 +182,7 @@ export default function Home() {
 
   const dateRange =
     displayHistory.length >= 2
-      ? `${new Date(displayHistory[displayHistory.length - 1].date).toLocaleDateString()} - ${new Date(displayHistory[0].date).toLocaleDateString()}`
+      ? `${formatDateUtc(displayHistory[displayHistory.length - 1].date)} - ${formatDateUtc(displayHistory[0].date)}`
       : null;
 
   return (
@@ -229,6 +255,16 @@ export default function Home() {
 
         {displayAnalysis && (
           <div className="mt-8 space-y-4">
+            <GameBoard
+              pgn={SCREENSHOT_DEMO ? SCREENSHOT_DEMO_PGN : pgn.trim()}
+              boardOrientation={userColor === "b" ? "black" : "white"}
+              criticalMomentPlies={
+                displayAnalysis.criticalMoments
+                  ?.filter((cm): cm is CriticalMoment & { ply: number } => cm.ply !== null)
+                  .map((cm) => ({ ply: cm.ply, label: cm.text }))
+              }
+            />
+
             <SectionCard label="Summary">
               <p className="text-sm leading-relaxed">{displayAnalysis.summary}</p>
             </SectionCard>
@@ -242,7 +278,7 @@ export default function Home() {
                         key={i}
                         className="border-l-2 border-gray-300 pl-3 text-sm leading-relaxed dark:border-zinc-600"
                       >
-                        {m}
+                        {m.text}
                       </li>
                     ))}
                   </ul>
@@ -327,7 +363,7 @@ export default function Home() {
                       )}
                     </div>
                     <span className="text-xs text-gray-400 dark:text-zinc-500">
-                      {new Date(entry.date).toLocaleDateString()}
+                      {formatDateUtc(entry.date)}
                     </span>
                   </div>
                 ))}

@@ -200,8 +200,16 @@ export async function POST(request: Request) {
       }
     }
 
+    const enrichedCriticalMoments = (parsed.criticalMoments ?? []).map(
+      (text: string, i: number) => ({
+        text,
+        ply: criticalMoments[i]?.ply ?? null,
+      }),
+    );
+
     return NextResponse.json({
       ...parsed,
+      criticalMoments: enrichedCriticalMoments,
       meta: { white: metadata.white, black: metadata.black, result: metadata.result },
     });
   } catch (error) {
