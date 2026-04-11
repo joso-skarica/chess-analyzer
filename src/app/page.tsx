@@ -77,7 +77,7 @@ function SectionCard({
 }
 
 export default function Home() {
-  const [pgn, setPgn] = useState("");
+  const [pgn, setPgn] = useState(SCREENSHOT_DEMO ? SCREENSHOT_DEMO_PGN : "");
   const [userColor, setUserColor] = useState<"w" | "b" | "">("");
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState("");
@@ -195,6 +195,11 @@ export default function Home() {
           <p className="mt-2 text-sm text-gray-500 dark:text-zinc-400">
             {SCREENSHOT_DEMO ? "Paste a PGN and get a coach-level review grounded in engine analysis — critical moments, recurring patterns, and practical training advice." : "Paste a PGN. Get a coach-level review grounded in engine analysis — not just the best moves, but what went wrong and what to practice."}
           </p>
+          {SCREENSHOT_DEMO && (
+            <p className="mt-2 text-xs text-gray-500 dark:text-zinc-500">
+              Demo mode — sample review shown
+            </p>
+          )}
         </header>
 
         <textarea
@@ -256,7 +261,7 @@ export default function Home() {
         {displayAnalysis && (
           <div className="mt-8 space-y-4">
             <GameBoard
-              pgn={SCREENSHOT_DEMO ? SCREENSHOT_DEMO_PGN : pgn.trim()}
+              pgn={pgn.trim()}
               boardOrientation={userColor === "b" ? "black" : "white"}
               criticalMomentPlies={
                 displayAnalysis.criticalMoments
